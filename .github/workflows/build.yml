@@ -11,12 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Install Buildozer dependencies
+      - name: Setup
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-pip autoconf libtool pkg-config \
@@ -25,9 +20,17 @@ jobs:
 
       - name: Build APK
         run: |
-          buildozer android debug
+          export ANDROID_SDK_ROOT="$HOME/.buildozer/android/platform/android-sdk"
+          buildozer android debug 2>&1 || true
+          # p4a sometimes fails finding aidl, fix and retry
+          AIDL_BIN=$(find "$ANDROID_SDK_ROOT" -name aidl -type f 2>/dev/null | head -1)
+          if [ -n "$AIDL_BIN" ]; then
+            sudo cp "$AIDL_BIN" /usr/local/bin/aidl
+            buildozer android debug
+          fi
 
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: EnemyDetector-APK
