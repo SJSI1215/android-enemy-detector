@@ -7,24 +7,10 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    container: kivy/buildozer:latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip autoconf libtool pkg-config \
-            zlib1g-dev cmake libffi-dev libssl-dev openjdk-17-jdk zip unzip wget
-          pip install buildozer cython virtualenv
-
-      - name: Install aidl
-        run: |
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          unzip -q commandlinetools-linux-11076708_latest.zip
-          yes | cmdline-tools/bin/sdkmanager --sdk_root=$HOME/sdk --install "build-tools;34.0.0" "platform-tools"
-          sudo cp $HOME/sdk/build-tools/34.0.0/aidl /usr/local/bin/
-          aidl --help 2>&1 | head -1
 
       - name: Build
         run: buildozer android debug
@@ -32,5 +18,5 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: APK
+          name: EnemyDetector-APK
           path: bin/*.apk
