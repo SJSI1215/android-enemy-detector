@@ -1,8 +1,8 @@
-name: Build Android APK
+name: Build APK
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -11,32 +11,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup
+      - name: Install deps
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-pip autoconf libtool pkg-config \
             zlib1g-dev cmake libffi-dev libssl-dev openjdk-17-jdk zip unzip wget
           pip install buildozer cython virtualenv
 
-      - name: Install Android SDK & AIDL
+      - name: Install aidl
         run: |
-          mkdir -p $HOME/android-sdk/cmdline-tools
-          cd $HOME/android-sdk/cmdline-tools
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
           unzip -q commandlinetools-linux-11076708_latest.zip
-          mv cmdline-tools latest
-          export ANDROID_SDK_ROOT=$HOME/android-sdk
-          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --install "build-tools;34.0.0" "platform-tools"
-          sudo cp $ANDROID_SDK_ROOT/build-tools/34.0.0/aidl /usr/local/bin/
-          which aidl
+          yes | cmdline-tools/bin/sdkmanager --sdk_root=$HOME/sdk --install "build-tools;34.0.0" "platform-tools"
+          sudo cp $HOME/sdk/build-tools/34.0.0/aidl /usr/local/bin/
+          aidl --help 2>&1 | head -1
 
-      - name: Build APK
-        run: |
-          buildozer android debug
+      - name: Build
+        run: buildozer android debug
 
-      - name: Upload APK
-        if: success()
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: EnemyDetector-APK
+          name: APK
           path: bin/*.apk
