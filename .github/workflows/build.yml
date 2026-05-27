@@ -15,19 +15,24 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-pip autoconf libtool pkg-config \
-            zlib1g-dev cmake libffi-dev libssl-dev openjdk-17-jdk zip unzip
+            zlib1g-dev cmake libffi-dev libssl-dev openjdk-17-jdk zip unzip wget
           pip install buildozer cython virtualenv
+
+      - name: Install Android SDK & AIDL
+        run: |
+          mkdir -p $HOME/android-sdk/cmdline-tools
+          cd $HOME/android-sdk/cmdline-tools
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q commandlinetools-linux-11076708_latest.zip
+          mv cmdline-tools latest
+          export ANDROID_SDK_ROOT=$HOME/android-sdk
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --install "build-tools;34.0.0" "platform-tools"
+          sudo cp $ANDROID_SDK_ROOT/build-tools/34.0.0/aidl /usr/local/bin/
+          which aidl
 
       - name: Build APK
         run: |
-          export ANDROID_SDK_ROOT="$HOME/.buildozer/android/platform/android-sdk"
-          buildozer android debug 2>&1 || true
-          # p4a sometimes fails finding aidl, fix and retry
-          AIDL_BIN=$(find "$ANDROID_SDK_ROOT" -name aidl -type f 2>/dev/null | head -1)
-          if [ -n "$AIDL_BIN" ]; then
-            sudo cp "$AIDL_BIN" /usr/local/bin/aidl
-            buildozer android debug
-          fi
+          buildozer android debug
 
       - name: Upload APK
         if: success()
